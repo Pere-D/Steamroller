@@ -16,6 +16,32 @@ Warum die Beta-Runtime? Die stabile Whisky-Runtime (3.1.1) ist nicht „GPTk-fä
 darauf gar nicht. Erst die 4.x-Linie (CrossOver-Patches) kann D3DMetal ausführen. Laut Release-Notes wurde
 sie mit Steam und DX12-Spielen über D3DMetal getestet.
 
+## Download und Installation (Kurzfassung)
+
+Voraussetzungen: Mac mit Apple Silicon (M1 oder neuer), macOS 15 oder neuer, [Homebrew](https://brew.sh),
+ein Steam-Konto, das das Spiel besitzt.
+
+1. **Paket laden:** [WinGaming-Setup.zip](https://github.com/Pere-D/WinGaming/releases/latest/download/WinGaming-Setup.zip)
+   und nach `~/WinGaming` entpacken. Alternativ:
+
+   ```bash
+   git clone https://github.com/Pere-D/WinGaming.git ~/WinGaming
+   ```
+
+2. **Installieren** (Terminal öffnen, einfügen, Enter; dauert 5 bis 10 Minuten, lädt rund 1 GB):
+
+   ```bash
+   ~/WinGaming/install.sh
+   ```
+
+   Das Skript prüft Rosetta und Homebrew, installiert Whisky, richtet die Wine-Engine und Apples D3DMetal
+   ein, legt die Bottle „Steam“ an, installiert Steam und baut `Steam (Whisky).app`.
+
+3. **Spielen:** Doppelklick auf `~/WinGaming/Steam (Whisky).app`, mit dem Steam-Konto einloggen,
+   RuneScape: Dragonwilds installieren (ca. 25 GB), starten.
+
+Was dabei genau passiert und was bei Problemen hilft, steht weiter unten.
+
 ## Ordner
 
 ```
@@ -73,7 +99,8 @@ Logs: Whisky → Bottle → „Diagnostics“; Steam-Logs unter `drive_c/Program
 
 ## Für Freunde weitergeben
 
-Das Paket `WinGaming-Setup.zip` (im Ordner, ein paar Kilobyte) enthält nur Skripte und diese Anleitung.
+Einfach den Link schicken: https://github.com/Pere-D/WinGaming. Das Paket `WinGaming-Setup.zip` aus den
+Releases (ein paar Kilobyte) enthält nur Skripte und diese Anleitung.
 Runtime, D3DMetal und den Steam-Installer laden die Skripte selbst von GitHub bzw. Valve und prüfen die
 SHA-256-Prüfsummen. Nichts Proprietäres wird weitergegeben, jeder lädt Apples D3DMetal selbst.
 
@@ -93,9 +120,8 @@ So geht es:
    Bottle an, installiert Steam und baut `Steam (Whisky).app`. Dauer: 5 bis 10 Minuten, rund 1 GB Download.
 3. Doppelklick auf `Steam (Whisky).app`, einloggen, Spiel installieren.
 
-Hinweis: Beim ersten Start von `install.sh` fragt macOS eventuell nach dem Passwort für Rosetta. Wer das
-Paket per GitHub teilen will, legt den Ordner (ohne `downloads/`, `installer/` und die `.app`) in ein Repo;
-die Skripte funktionieren von überall, solange `setup/` neben `install.sh` liegt.
+Hinweis: Beim ersten Start von `install.sh` fragt macOS eventuell nach dem Passwort für Rosetta. Die Skripte
+funktionieren von überall, solange `setup/` neben `install.sh` liegt.
 
 ## Updates
 
