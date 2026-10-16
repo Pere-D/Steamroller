@@ -1,0 +1,8 @@
+# Große Downloads (werden von setup/install-engine.sh bei Bedarf geladen und geprüft)
+downloads/
+installer/
+# Vom Skript erzeugter Starter
+*.app/
+# Weitergabe-ZIP kommt als Release-Asset, nicht ins Repo
+*.zip
+.DS_Store
