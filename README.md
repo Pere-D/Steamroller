@@ -38,7 +38,8 @@ ein Steam-Konto, das das Spiel besitzt.
    ein, legt die Bottle „Steam“ an, installiert Steam und baut `Steam (Whisky).app`.
 
 3. **Spielen:** Doppelklick auf `~/WinGaming/Steam (Whisky).app`, mit dem Steam-Konto einloggen,
-   RuneScape: Dragonwilds installieren (ca. 25 GB), starten.
+   RuneScape: Dragonwilds installieren (ca. 25 GB), einmal starten (stürzt beim ersten Mal nach ~30 s ab),
+   dann `~/WinGaming/setup/fix-dragonwilds.sh` ausführen und erneut starten.
 
 Was dabei genau passiert und was bei Problemen hilft, steht weiter unten.
 
@@ -53,6 +54,7 @@ WinGaming/
 ├── setup/
 │   ├── install-engine.sh     ← Runtime + D3DMetal laden, prüfen, installieren, deployen (idempotent)
 │   ├── make-steam-bottle.sh  ← Bottle anlegen, konfigurieren, Steam installieren, Starter bauen
+│   ├── fix-dragonwilds.sh    ← schaltet FSR Frame Generation ab (Absturz nach ~30 s)
 │   ├── launch.sh             ← Startskript der .app (holt laufendes Steam nach vorn)
 │   └── front.swift           ← kleiner Helfer, der Fenster nach vorn holt
 ├── downloads/
@@ -75,11 +77,14 @@ Wo Whisky seine Daten ablegt:
 2. **Einloggen** (Steam Guard ganz normal am Handy bestätigen).
 3. **RuneScape: Dragonwilds installieren** (ca. 25 GB). Steam richtet beim ersten Spielstart die
    Visual-C++-Laufzeit des Spiels ein; das darf ein paar Minuten dauern.
-4. **Spielen.** Das Spiel läuft über D3DMetal (DirectX 12). Whisky schaltet dafür automatisch um:
+4. **Einmalig nach dem ersten Start:** `setup/fix-dragonwilds.sh` ausführen. Das Spiel hält D3DMetal für
+   eine AMD-Karte und schaltet FSR 3 **mit Frame Generation** ein; genau die lässt es nach rund 30 Sekunden
+   im Hauptmenü abstürzen. Das Skript schaltet nur die Frame Generation ab, FSR-Upscaling bleibt.
+5. **Spielen.** Das Spiel läuft über D3DMetal (DirectX 12). Whisky schaltet dafür automatisch um:
    Steam selbst zeichnet über DXVK, das Spiel bekommt den Bottle-Backend „Recommended“ = D3DMetal.
 
-Empfohlene Spiel-Einstellungen für den Anfang: DirectX 12 (Standard), Upscaling an (MetalFX wird über die
-DLSS-Brücke angeboten), Frame Generation aus, Grafik „Mittel“ bis „Hoch“ in 1440p. Auf dem M4 Pro sollte
+Empfohlene Spiel-Einstellungen für den Anfang: DirectX 12 (Standard), Upscaling FSR 3 „Quality“,
+**Frame Generation aus** (nicht wieder einschalten), Grafik „Mittel“ bis „Hoch“ in 1440p. Auf dem M4 Pro sollte
 das flüssig sein; dann hochdrehen.
 
 ## Wenn etwas hakt
@@ -89,6 +94,7 @@ das flüssig sein; dann hochdrehen.
 | Steam: „steamwebhelper reagiert nicht“ | Locale ist auf `en_US.UTF-8` gesetzt (Pflicht). Whisky → Bottle „Steam“ → Config → Launcher Compatibility prüfen; notfalls Steam-Ordner löschen und `setup/make-steam-bottle.sh` neu laufen lassen. |
 | Steam startet, aber **kein Fenster** erscheint (Prozesse laufen) | Kennzeichen: `logs/cef_log.txt` meldet `eglCreateWindowSurface … EGL_BAD_ALLOC`. Ursache: Apples `dxgi` passt nicht zu DXVKs `d3d11`, mit dem Steam seine UI zeichnet. Fix: `setup/make-steam-bottle.sh` erneut laufen lassen (setzt Wines Original-`dxgi.dll` als native Datei in `system32`). Whisky bringt denselben Fix in der nächsten Version (upstream #251/#295). |
 | Steam-Fenster bleibt schwarz | Bekannte Beta-Eigenart unter Last. Einmal mit `WINEMSYNC=0` starten: Whisky → Bottle → Config → Wine → Enhanced Sync auf „None“, Steam starten, danach wieder auf „msync“. |
+| Dragonwilds stürzt ca. 30 s nach dem Start im Menü ab, ohne Fehlermeldung | FSR Frame Generation ist an (Auto-Erkennung „AMD“). `setup/fix-dragonwilds.sh` ausführen, dann neu starten. Im Spiel Frame Generation nicht wieder aktivieren. |
 | Spiel startet nicht / stürzt beim Laden ab | In Steam: Rechtsklick → Eigenschaften → Startoptionen `-dx11` eintragen (nutzt D3DMetals DX11-Pfad). Alternativ in Whisky bei der Spiel-EXE den Backend auf DXMT setzen (nur mit `-dx11`). |
 | Pinker Bildschirm / sofortiger Absturz | Das passiert mit DXVK/DXMT bei DX12. Backend muss „Recommended“ oder „D3DMetal“ sein. Whisky → Settings → Game Porting Toolkit: dort muss „D3DMetal 3.0“ als importiert und deployt stehen. |
 | „GPU drivers are out of date“ | Kommt bei manchen Engines von D3DMetals Treiberversion. Steam-Startoption `-dx11` probieren; der Treiber-Interposer der Runtime wird von Whisky erst für D3DMetal 4 aktiviert. |

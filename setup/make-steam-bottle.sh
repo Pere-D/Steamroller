@@ -92,4 +92,7 @@ else
 fi
 codesign --force --deep -s - "$APP" >/dev/null 2>&1 || true
 
+# Dragonwilds-Konfiguration vorbereiten (Frame Generation aus); harmlos, wenn das Spiel noch fehlt
+"$HERE/setup/fix-dragonwilds.sh" "$NAME" 2>/dev/null || true
+
 printf '\n\033[32mFertig. Steam starten: Doppelklick auf "%s/Steam (Whisky).app" oder\n  %s run %s "%s"\033[0m\n' "$HERE" "$CMD" "$NAME" "$STEAM_EXE"
