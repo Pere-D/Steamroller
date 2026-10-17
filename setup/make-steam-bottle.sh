@@ -8,11 +8,14 @@
 # Voraussetzung: setup/install-engine.sh ist gelaufen.
 # Aufruf: setup/make-steam-bottle.sh [Bottle-Name]
 set -euo pipefail
+setopt null_glob   # leere Globs (z. B. noch keine Bottle) sind kein Fehler
 
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
-CMD=/Applications/Whisky.app/Contents/Resources/WhiskyCmd
+DATA="${WINGAMING_DATA:-$HERE}"
+CMD=""; for c in "/Applications/Whisky.app" "$HOME/Applications/Whisky.app"; do
+  [ -x "$c/Contents/Resources/WhiskyCmd" ] && { CMD="$c/Contents/Resources/WhiskyCmd"; break; }; done
 NAME="${1:-Steam}"
-INSTALLER="$HERE/installer/SteamSetup.exe"
+INSTALLER="$DATA/installer/SteamSetup.exe"
 BOTTLES="$HOME/Library/Containers/com.franke.Whisky/Bottles"
 
 log(){ printf '\n\033[1m==> %s\033[0m\n' "$*"; }
@@ -21,13 +24,13 @@ find_bottle(){ local d n; for d in "$BOTTLES"/*/; do
   n="$(/usr/libexec/PlistBuddy -c 'Print :info:name' "$d/Metadata.plist" 2>/dev/null || true)"
   [ "$n" = "$NAME" ] && { printf '%s' "${d%/}"; return 0; }; done; return 1; }
 
-[ -x "$CMD" ] || die "Whisky.app fehlt: brew install --cask frankea/whisky/whisky"
+[ -n "$CMD" ] && [ -x "$CMD" ] || die "Whisky.app (frankea-Fork) fehlt; install.sh ausführen"
 [ -f "$HOME/Library/Application Support/com.franke.Whisky/Libraries/WhiskyWineVersion.plist" ] \
   || die "Keine Runtime installiert: erst setup/install-engine.sh ausführen"
 
 if [ ! -f "$INSTALLER" ]; then
   log "SteamSetup.exe wird von Valve geladen"
-  mkdir -p "$HERE/installer"
+  mkdir -p "$DATA/installer"
   curl -fL -o "$INSTALLER" "https://cdn.cloudflare.steamstatic.com/client/installer/SteamSetup.exe"
 fi
 
@@ -80,19 +83,22 @@ else
   echo "kein D3DMetal-Store mit Originalen gefunden, nichts zu tun"
 fi
 
-log "Doppelklick-Starter wird angelegt"
-"$CMD" shortcut "$NAME" "$STEAM_EXE" --name "Steam (Whisky)" --output "$HERE" --overwrite
-APP="$HERE/Steam (Whisky).app"
-# Eigenes Startskript: holt ein bereits laufendes Steam nach vorn statt stumm zu enden.
-cp "$HERE/setup/launch.sh" "$APP/Contents/MacOS/launch" && chmod +x "$APP/Contents/MacOS/launch"
-if xcrun -f swiftc >/dev/null 2>&1; then
-  xcrun swiftc -O -o "$APP/Contents/MacOS/front" "$HERE/setup/front.swift" 2>/dev/null && echo "Fenster-Helfer (front) in den Starter kompiliert"
-else
-  echo "swiftc fehlt (Xcode Command Line Tools); Starter meldet ein laufendes Steam per Mitteilung"
+if [ "${WINGAMING_NO_SHORTCUT:-0}" != "1" ]; then
+  log "Doppelklick-Starter wird angelegt"
+  "$CMD" shortcut "$NAME" "$STEAM_EXE" --name "Steam (Whisky)" --output "$HERE" --overwrite
+  APP="$HERE/Steam (Whisky).app"
+  cp "$HERE/setup/launch.sh" "$APP/Contents/MacOS/launch" && chmod +x "$APP/Contents/MacOS/launch"
+  if [ -n "${WINGAMING_FRONT:-}" ] && [ -x "$WINGAMING_FRONT" ]; then
+    cp "$WINGAMING_FRONT" "$APP/Contents/MacOS/front"
+  elif /usr/bin/xcode-select -p >/dev/null 2>&1; then
+    xcrun swiftc -O -o "$APP/Contents/MacOS/front" "$HERE/setup/front.swift" 2>/dev/null && echo "Fenster-Helfer (front) kompiliert"
+  else
+    echo "Kein Fenster-Helfer (keine Xcode-Tools); Starter meldet ein laufendes Steam per Mitteilung"
+  fi
+  codesign --force --deep -s - "$APP" >/dev/null 2>&1 || true
 fi
-codesign --force --deep -s - "$APP" >/dev/null 2>&1 || true
 
 # Dragonwilds-Konfiguration vorbereiten (Frame Generation aus); harmlos, wenn das Spiel noch fehlt
 "$HERE/setup/fix-dragonwilds.sh" "$NAME" 2>/dev/null || true
 
-printf '\n\033[32mFertig. Steam starten: Doppelklick auf "%s/Steam (Whisky).app" oder\n  %s run %s "%s"\033[0m\n' "$HERE" "$CMD" "$NAME" "$STEAM_EXE"
+printf '\n\033[32mFertig. Steam starten:\n  %s run %s "%s"\033[0m\n' "$CMD" "$NAME" "$STEAM_EXE"

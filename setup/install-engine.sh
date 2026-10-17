@@ -9,10 +9,12 @@
 # Aufruf: setup/install-engine.sh [Runtime.tar.gz] [game-porting-toolkit.tar.xz]
 # Ohne Argumente werden beide Archive bei Bedarf nach downloads/ geladen und per SHA-256 geprüft.
 set -euo pipefail
+setopt null_glob   # leere Globs (z. B. noch keine Bottle) sind kein Fehler
 
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
-RUNTIME_TAR="${1:-$HERE/downloads/whisky-runtime/Libraries-4.6.4-beta.1.tar.gz}"
-GPTK_TAR="${2:-$HERE/downloads/gptk/game-porting-toolkit-3.0-3.tar.xz}"
+DATA="${WINGAMING_DATA:-$HERE}"            # wohin Downloads kommen (App: ~/Library/Application Support/WinGaming)
+RUNTIME_TAR="${1:-$DATA/downloads/whisky-runtime/Libraries-4.6.4-beta.1.tar.gz}"
+GPTK_TAR="${2:-$DATA/downloads/gptk/game-porting-toolkit-3.0-3.tar.xz}"
 WANT_RUNTIME="${WANT_RUNTIME:-4.6.4}"
 APP_SUPPORT="$HOME/Library/Application Support/com.franke.Whisky"
 LIB="$APP_SUPPORT/Libraries"
@@ -47,7 +49,9 @@ fetch(){ # fetch <ziel> <url> <sha256>: lädt, wenn die Datei fehlt, und prüft 
 [ "$#" -ge 2 ] || fetch "$GPTK_TAR" "$GPTK_URL" "$GPTK_SHA"
 [ -f "$RUNTIME_TAR" ] || die "Runtime-Archiv fehlt: $RUNTIME_TAR"
 [ -f "$GPTK_TAR" ]    || die "GPTk-Archiv fehlt: $GPTK_TAR"
-[ -d /Applications/Whisky.app ] || die "Whisky.app fehlt: brew install --cask frankea/whisky/whisky"
+WHISKY_APP=""; for c in "/Applications/Whisky.app" "$HOME/Applications/Whisky.app"; do
+  [ -d "$c" ] && /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$c/Contents/Info.plist" 2>/dev/null | grep -q com.franke.Whisky && { WHISKY_APP="$c"; break; }; done
+[ -n "$WHISKY_APP" ] || die "Whisky.app (frankea-Fork) fehlt; install.sh ausführen"
 /usr/bin/pgrep -q oahd || die "Rosetta fehlt: softwareupdate --install-rosetta"
 
 if pgrep -xq Whisky; then log "Whisky wird beendet"; osascript -e 'quit app "Whisky"' >/dev/null 2>&1 || true; sleep 2; fi

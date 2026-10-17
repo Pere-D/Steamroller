@@ -1,11 +1,11 @@
 #!/bin/zsh
 # fix-dragonwilds.sh
-# RuneScape: Dragonwilds stürzt unter D3DMetal ca. 30 Sekunden nach dem Start im Hauptmenü ab, weil das Spiel
-# D3DMetal für eine AMD-Karte hält und automatisch FSR 3 MIT Frame Generation (Frame Interpolation) wählt.
-# Die FSR-Frame-Interpolation verträgt sich nicht mit D3DMetal. FSR-Upscaling selbst läuft problemlos.
-# Dieses Skript schaltet Frame Generation in den Spieleinstellungen ab und setzt zusätzlich die Engine-Variable.
-# Idempotent; jederzeit erneut ausführbar (das Spiel sollte dabei nicht laufen).
+# RuneScape: Dragonwilds hält D3DMetal für eine AMD-Karte und schaltet FSR 3 MIT Frame Generation ein.
+# Die Frame-Interpolation beendet das Spiel unter D3DMetal nach ca. 30 s still. FSR-Upscaling selbst ist ok.
+# Dieses Skript schaltet Frame Generation ab, setzt die Engine-Variable und (nur wenn noch keine
+# Spieleinstellungen existieren) ein moderates Grafik-Profil mit 60-fps-Limit. Idempotent.
 set -euo pipefail
+setopt null_glob   # leere Globs (z. B. noch keine Bottle) sind kein Fehler
 NAME="${1:-Steam}"
 BOTTLES="$HOME/Library/Containers/com.franke.Whisky/Bottles"
 log(){ printf '\n\033[1m==> %s\033[0m\n' "$*"; }
@@ -18,23 +18,28 @@ pgrep -f 'RSDragonwilds' >/dev/null && die "Dragonwilds läuft gerade; erst been
 
 C="$B/drive_c/users/crossover/AppData/Local/RSDragonwilds/Saved/Config/Windows"
 mkdir -p "$C"
-log "Frame Generation in GameUserSettings.ini abschalten"
-if [ -f "$C/GameUserSettings.ini" ]; then
-  python3 -I - "$C/GameUserSettings.ini" <<'PY'
-import re, sys
-p=sys.argv[1]; t=open(p,encoding="utf-8-sig").read()
-n=len(re.findall(r"^FrameGenerationMode\[\d+\]=[1-9]", t, flags=re.M))
-t=re.sub(r"^(FrameGenerationMode\[\d+\])=\d+", r"\1=0", t, flags=re.M)
-open(p,"w",encoding="utf-8-sig").write(t)
-print(f"{n} Modus-Einträge auf 0 gesetzt" if n else "war bereits aus")
-PY
+GUS="$C/GameUserSettings.ini"
+if [ -f "$GUS" ]; then
+  log "Frame Generation in GameUserSettings.ini abschalten"
+  n="$(grep -c -E '^FrameGenerationMode\[[0-9]+\]=[1-9]' "$GUS" || true)"
+  sed -i '' -E 's/^(FrameGenerationMode\[[0-9]+\])=[0-9]+/\1=0/' "$GUS"
+  [ "${n:-0}" -gt 0 ] && echo "$n Modus-Einträge auf 0 gesetzt" || echo "war bereits aus"
 else
-  echo "GameUserSettings.ini gibt es noch nicht (Spiel noch nie gestartet); nach dem ersten Start erneut ausführen"
+  log "Spieleinstellungen vorbelegen (Frame Generation aus, Grafik Hoch, 60 fps)"
+  {
+    printf '[/Script/Dominion.DominionUserSettings]\n'
+    for i in 0 1 2 3 4 5 6 7 8; do printf 'FrameGenerationMode[%d]=0\n' "$i"; done
+    printf 'FrontendFrameRateLimit=60.000000\nGameFrameRateLimit=60.000000\n'
+    for k in RenderingQuality AntialiasingQuality GlobalIlluminationQuality ReflectionsQuality ShadowsQuality FoliageQuality ModelsQuality PostProcessQuality EffectsQuality ViewDistanceQuality TextureQuality; do printf '%s=3\n' "$k"; done
+    printf '\n[ScalabilityGroups]\n'
+    for k in sg.ViewDistanceQuality sg.AntiAliasingQuality sg.ShadowQuality sg.GlobalIlluminationQuality sg.ReflectionQuality sg.PostProcessQuality sg.TextureQuality sg.EffectsQuality sg.FoliageQuality sg.ShadingQuality sg.LandscapeQuality; do printf '%s=3\n' "$k"; done
+  } > "$GUS"
+  echo "GameUserSettings.ini angelegt"
 fi
-log "Engine-Variable r.FidelityFX.FI.Enabled=0 setzen"
+log "Engine-Variable r.FidelityFX.FI.Enabled=0"
 if [ -f "$C/Engine.ini" ] && grep -q 'r.FidelityFX.FI.Enabled' "$C/Engine.ini"; then
   echo "bereits gesetzt"
 else
   printf '\n[SystemSettings]\nr.FidelityFX.FI.Enabled=0\n' >> "$C/Engine.ini"; echo "ergänzt"
 fi
-printf '\n\033[32mFertig. Dragonwilds jetzt über Steam starten; FSR-Upscaling bleibt an, Frame Generation ist aus.\033[0m\n'
+printf '\n\033[32mDragonwilds: Frame Generation aus, FSR-Upscaling bleibt an.\033[0m\n'

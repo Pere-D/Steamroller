@@ -6,3 +6,4 @@ installer/
 # Weitergabe-ZIP kommt als Release-Asset, nicht ins Repo
 *.zip
 .DS_Store
+dist/
