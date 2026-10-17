@@ -20,7 +20,7 @@ cat > "$APP/Contents/Info.plist" <<PL
 <dict>
 	<key>CFBundleName</key><string>Steamroller</string>
 	<key>CFBundleDisplayName</key><string>Steamroller</string>
-	<key>CFBundleIdentifier</key><string>ch.pere-d.steamroller</string>
+	<key>CFBundleIdentifier</key><string>app.steamroller</string>
 	<key>CFBundleExecutable</key><string>launch</string>
 	<key>CFBundleIconFile</key><string>AppIcon</string>
 	<key>CFBundlePackageType</key><string>APPL</string>
