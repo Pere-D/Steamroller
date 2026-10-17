@@ -1,4 +1,15 @@
-# WinGaming – CrossOver-Nachbau für Steam auf dem Mac
+# WinGaming – Steam-Spiele auf dem Mac (Apple Silicon)
+
+**Schnellstart, ein Programm:**
+
+1. **[⬇ Steam-auf-Mac.zip herunterladen](https://github.com/Pere-D/WinGaming/releases/latest/download/Steam-auf-Mac.zip)**
+2. Entpacken, `Steam auf Mac` in den Ordner „Programme“ ziehen, doppelklicken.
+3. Beim ersten Mal sagt macOS „nicht überprüft“: Systemeinstellungen → Datenschutz & Sicherheit → **„Trotzdem öffnen“**.
+4. „Installieren“ klicken, 5 bis 10 Minuten warten, in Steam einloggen, RuneScape: Dragonwilds installieren, spielen.
+
+Voraussetzungen: Mac mit Apple Silicon (M1 oder neuer), macOS 15 oder neuer, ein Steam-Konto mit dem Spiel.
+
+---
 
 Freier Ersatz für CrossOver, zusammengebaut aus denselben Bausteinen, die CrossOver intern nutzt:
 Wine mit CrossOver-Patches, Apples D3DMetal (DirectX 11/12 → Metal) und eine macOS-Oberfläche.
@@ -16,25 +27,17 @@ Warum die Beta-Runtime? Die stabile Whisky-Runtime (3.1.1) ist nicht „GPTk-fä
 darauf gar nicht. Erst die 4.x-Linie (CrossOver-Patches) kann D3DMetal ausführen. Laut Release-Notes wurde
 sie mit Steam und DX12-Spielen über D3DMetal getestet.
 
-## Installation: ein Programm, fertig
+## Was beim ersten Start passiert
 
-Voraussetzungen: Mac mit Apple Silicon (M1 oder neuer) und macOS 15 oder neuer. Sonst nichts, kein
-Homebrew, kein Xcode. Dazu ein Steam-Konto, das das Spiel besitzt.
+Die App ist nicht bei Apple notarisiert (das bräuchte ein kostenpflichtiges Entwicklerkonto), darum blockt
+macOS sie beim allerersten Öffnen: „Fertig“ klicken, dann **Systemeinstellungen → Datenschutz & Sicherheit**,
+ganz unten **„Trotzdem öffnen“**, mit Passwort oder Touch ID bestätigen. Das passiert nur einmal.
 
-1. **[Steam-auf-Mac.zip](https://github.com/Pere-D/WinGaming/releases/latest/download/Steam-auf-Mac.zip)**
-   laden, entpacken, `Steam auf Mac.app` in den Programme-Ordner ziehen.
-2. **Doppelklick auf `Steam auf Mac`.** Beim allerersten Mal blockt macOS die App, weil sie nicht bei Apple
-   notarisiert ist („Apple konnte nicht überprüfen, ob … frei von Schadsoftware ist“): „Fertig“ klicken,
-   dann **Systemeinstellungen → Datenschutz & Sicherheit**, ganz unten **„Trotzdem öffnen“**, mit Passwort
-   oder Touch ID bestätigen. Das ist einmalig.
-3. Die App fragt „Installieren?“. Danach zeigt ein Terminal-Fenster den Fortschritt: Rosetta (falls nötig),
-   Whisky, Wine-Engine mit Apples D3DMetal, Steam. Dauer 5 bis 10 Minuten, rund 1 GB Download. Am Ende
-   startet Steam von selbst.
-4. In Steam einloggen, RuneScape: Dragonwilds installieren (ca. 25 GB), spielen. Die App legt die
-   Spiel-Einstellungen passend vor (Frame Generation aus, Grafik „Hoch“, 60 fps).
-
-Ab dann ist `Steam auf Mac` einfach dein Steam-Startknopf: Doppelklick startet Steam in der Bottle oder holt
-es nach vorn, wenn es schon läuft.
+Danach fragt die App „Installieren?“ und zeigt den Fortschritt in einem Terminal-Fenster: Rosetta (falls
+nötig), Whisky aus der signierten DMG, Wine-Engine mit Apples D3DMetal, Steam. Rund 1 GB Download. Am Ende
+startet Steam von selbst. Die App legt die Dragonwilds-Einstellungen passend vor (Frame Generation aus,
+Grafik „Hoch“, 60 fps). Ab dann ist `Steam auf Mac` einfach der Steam-Startknopf: Doppelklick startet Steam
+in der Bottle oder holt es nach vorn, wenn es schon läuft.
 
 **Für Leute mit Terminal-Erfahrung** geht es auch ohne App:
 
