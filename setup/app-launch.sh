@@ -26,9 +26,9 @@ if [ -n "$STEAM_EXE" ]; then
     [ -x "$APP/Contents/MacOS/front" ] && "$APP/Contents/MacOS/front" $RUNNING
     exit 0
   fi
-  # Steam losgelöst starten; die App selbst beendet sich sofort wieder
-  ( "$CMD" run Steam "$STEAM_EXE" >/dev/null 2>&1 & )
-  exit 0
+  # exec statt Hintergrundstart: Von LaunchServices gestartete Apps reissen ihre Kinder mit, wenn der
+  # App-Prozess endet. So bleibt "Steam auf Mac" im Dock aktiv, solange Steam läuft (wie Whiskys eigene Starter).
+  exec "$CMD" run Steam "$STEAM_EXE"
 fi
 
 # ---- Erstinstallation ----
