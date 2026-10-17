@@ -7,3 +7,5 @@ installer/
 *.zip
 .DS_Store
 dist/
+.restore-after-test.sh
+.test-backup-ts

@@ -43,7 +43,8 @@ else
   [ "$(shasum -a 256 "$DMG" | cut -d' ' -f1)" = "$WHISKY_DMG_SHA" ] || die "Prüfsumme der Whisky-DMG stimmt nicht; Datei löschen: $DMG"
   echo "Prüfsumme OK"
   MNT="$(mktemp -d)"
-  yes | hdiutil attach -nobrowse -readonly -quiet -mountpoint "$MNT" "$DMG" || die "DMG liess sich nicht öffnen"
+  # kein "yes |": mit pipefail würde dessen SIGPIPE-Ende als Fehler zählen, obwohl hdiutil Erfolg hatte
+  printf 'Y\n' | hdiutil attach -nobrowse -readonly -quiet -mountpoint "$MNT" "$DMG" || die "DMG liess sich nicht öffnen"
   DEST="/Applications"; [ -w /Applications ] || { DEST="$HOME/Applications"; mkdir -p "$DEST"; }
   rm -rf "$DEST/Whisky.app"
   ditto "$MNT/Whisky.app" "$DEST/Whisky.app" || { hdiutil detach "$MNT" -quiet; die "Kopieren nach $DEST fehlgeschlagen"; }
