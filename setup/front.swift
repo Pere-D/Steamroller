@@ -1,4 +1,4 @@
-// front.swift: holt die Fenster der angegebenen Prozess-IDs nach vorn (ohne Bedienungshilfen-Rechte).
+// front.swift: brings the windows of the given process IDs to the front (no accessibility permission needed).
 import AppKit
 var any = false
 for pid in CommandLine.arguments.dropFirst().compactMap({ Int32($0) }) {

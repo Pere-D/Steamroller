@@ -1,27 +1,27 @@
 #!/bin/zsh
-# install.sh – Komplettinstallation für Apple-Silicon-Macs, ohne Homebrew und ohne Xcode:
-#   1) Voraussetzungen (Apple Silicon, macOS 15+, Rosetta)
-#   2) Whisky (Fork von frankea) aus der signierten DMG nach /Applications
-#   3) GPTk-fähige Runtime + Apples D3DMetal                 (setup/install-engine.sh)
-#   4) Bottle "Steam" anlegen, Steam installieren             (setup/make-steam-bottle.sh)
-# Downloads landen in $WINGAMING_DATA (Standard: dieser Ordner).
+# install.sh – complete setup for Apple Silicon Macs, without Homebrew and without Xcode:
+#   1) prerequisites (Apple Silicon, macOS 15+, Rosetta)
+#   2) Whisky (frankea's fork) from the signed DMG into /Applications
+#   3) GPTK-capable runtime + Apple's D3DMetal                (setup/install-engine.sh)
+#   4) bottle "Steam", Steam installed                        (setup/make-steam-bottle.sh)
+# Downloads go to $STEAMROLLER_DATA (default: this folder).
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
-export WINGAMING_DATA="${WINGAMING_DATA:-$HERE}"
+export STEAMROLLER_DATA="${STEAMROLLER_DATA:-$HERE}"
 WHISKY_DMG_URL="https://github.com/frankea/Whisky/releases/download/app-v3.7.0/Whisky-3.7.0.dmg"
 WHISKY_DMG_SHA="8232b3b96be09b56e8f4e6b091c34a89c74b27c63ccfce92aa8ffe6ce3fbfee2"
 log(){ printf '\n\033[1m==> %s\033[0m\n' "$*"; }
-die(){ printf '\033[31mFEHLER: %s\033[0m\n' "$*" >&2; exit 1; }
+die(){ printf '\033[31mERROR: %s\033[0m\n' "$*" >&2; exit 1; }
 
-log "Voraussetzungen"
-[ "$(uname -m)" = "arm64" ] || die "Nur für Apple-Silicon-Macs (M1 oder neuer)."
+log "Prerequisites"
+[ "$(uname -m)" = "arm64" ] || die "Apple Silicon Macs only (M1 or newer)."
 MAJOR="$(sw_vers -productVersion | cut -d. -f1)"
-[ "$MAJOR" -ge 15 ] || die "macOS 15 (Sequoia) oder neuer nötig, gefunden: $(sw_vers -productVersion)"
+[ "$MAJOR" -ge 15 ] || die "macOS 15 (Sequoia) or newer required, found $(sw_vers -productVersion)"
 if ! /usr/bin/pgrep -q oahd; then
-  log "Rosetta wird installiert (macOS fragt eventuell nach dem Passwort)"
+  log "Installing Rosetta (macOS may ask for your password)"
   softwareupdate --install-rosetta --agree-to-license \
     || sudo softwareupdate --install-rosetta --agree-to-license \
-    || die "Rosetta konnte nicht installiert werden"
+    || die "Rosetta could not be installed"
 fi
 echo "Apple Silicon, macOS $(sw_vers -productVersion), Rosetta: OK"
 
@@ -33,27 +33,27 @@ for c in "/Applications/Whisky.app" "$HOME/Applications/Whisky.app"; do
   fi
 done
 if [ -n "$WHISKY_APP" ]; then
-  echo "Whisky $(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$WHISKY_APP/Contents/Info.plist") ist installiert ($WHISKY_APP)"
+  echo "Whisky $(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$WHISKY_APP/Contents/Info.plist") is installed ($WHISKY_APP)"
 else
-  DMG="$WINGAMING_DATA/downloads/whisky/Whisky-3.7.0.dmg"
+  DMG="$STEAMROLLER_DATA/downloads/whisky/Whisky-3.7.0.dmg"
   if [ ! -f "$DMG" ]; then
-    mkdir -p "$(dirname "$DMG")"; echo "Lade Whisky ($WHISKY_DMG_URL)"
-    curl -fL --progress-bar -o "$DMG.part" "$WHISKY_DMG_URL" && mv "$DMG.part" "$DMG" || die "Download von Whisky fehlgeschlagen"
+    mkdir -p "$(dirname "$DMG")"; echo "Downloading Whisky ($WHISKY_DMG_URL)"
+    curl -fL --progress-bar -o "$DMG.part" "$WHISKY_DMG_URL" && mv "$DMG.part" "$DMG" || die "Whisky download failed"
   fi
-  [ "$(shasum -a 256 "$DMG" | cut -d' ' -f1)" = "$WHISKY_DMG_SHA" ] || die "Prüfsumme der Whisky-DMG stimmt nicht; Datei löschen: $DMG"
-  echo "Prüfsumme OK"
+  [ "$(shasum -a 256 "$DMG" | cut -d' ' -f1)" = "$WHISKY_DMG_SHA" ] || die "SHA-256 mismatch for the Whisky DMG; delete it: $DMG"
+  echo "Checksum OK"
   MNT="$(mktemp -d)"
-  # kein "yes |": mit pipefail würde dessen SIGPIPE-Ende als Fehler zählen, obwohl hdiutil Erfolg hatte
-  printf 'Y\n' | hdiutil attach -nobrowse -readonly -quiet -mountpoint "$MNT" "$DMG" || die "DMG liess sich nicht öffnen"
+  # no "yes |" here: with pipefail its SIGPIPE exit would count as a failure although hdiutil succeeded
+  printf 'Y\n' | hdiutil attach -nobrowse -readonly -quiet -mountpoint "$MNT" "$DMG" || die "Could not open the DMG"
   DEST="/Applications"; [ -w /Applications ] || { DEST="$HOME/Applications"; mkdir -p "$DEST"; }
   rm -rf "$DEST/Whisky.app"
-  ditto "$MNT/Whisky.app" "$DEST/Whisky.app" || { hdiutil detach "$MNT" -quiet; die "Kopieren nach $DEST fehlgeschlagen"; }
+  ditto "$MNT/Whisky.app" "$DEST/Whisky.app" || { hdiutil detach "$MNT" -quiet; die "Copying to $DEST failed"; }
   hdiutil detach "$MNT" -quiet || true
   xattr -dr com.apple.quarantine "$DEST/Whisky.app" 2>/dev/null || true
-  WHISKY_APP="$DEST/Whisky.app"; echo "Whisky installiert nach $WHISKY_APP"
+  WHISKY_APP="$DEST/Whisky.app"; echo "Whisky installed to $WHISKY_APP"
 fi
 
 "$HERE/setup/install-engine.sh"
 "$HERE/setup/make-steam-bottle.sh"
 
-printf '\n\033[32mAlles bereit.\033[0m\n'
+printf '\n\033[32mAll set.\033[0m\n'

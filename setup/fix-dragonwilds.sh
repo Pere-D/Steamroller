@@ -1,31 +1,31 @@
 #!/bin/zsh
 # fix-dragonwilds.sh
-# RuneScape: Dragonwilds hält D3DMetal für eine AMD-Karte und schaltet FSR 3 MIT Frame Generation ein.
-# Die Frame-Interpolation beendet das Spiel unter D3DMetal nach ca. 30 s still. FSR-Upscaling selbst ist ok.
-# Dieses Skript schaltet Frame Generation ab, setzt die Engine-Variable und (nur wenn noch keine
-# Spieleinstellungen existieren) ein moderates Grafik-Profil mit 60-fps-Limit. Idempotent.
+# RuneScape: Dragonwilds takes D3DMetal for an AMD GPU and switches on FSR 3 WITH frame generation.
+# Frame interpolation silently kills the game under D3DMetal after about 30 seconds; FSR upscaling itself is fine.
+# This script turns frame generation off, sets the engine variable and (only when no game settings exist yet)
+# seeds a moderate graphics profile with a 60 fps cap. Idempotent.
 set -euo pipefail
-setopt null_glob   # leere Globs (z. B. noch keine Bottle) sind kein Fehler
+setopt null_glob
 NAME="${1:-Steam}"
 BOTTLES="$HOME/Library/Containers/com.franke.Whisky/Bottles"
 log(){ printf '\n\033[1m==> %s\033[0m\n' "$*"; }
-die(){ printf '\033[31mFEHLER: %s\033[0m\n' "$*" >&2; exit 1; }
+die(){ printf '\033[31mERROR: %s\033[0m\n' "$*" >&2; exit 1; }
 B=""; for d in "$BOTTLES"/*/; do
   n="$(/usr/libexec/PlistBuddy -c 'Print :info:name' "$d/Metadata.plist" 2>/dev/null || true)"
   [ "$n" = "$NAME" ] && { B="${d%/}"; break; }; done
-[ -n "$B" ] || die "Bottle \"$NAME\" nicht gefunden"
-pgrep -f 'RSDragonwilds' >/dev/null && die "Dragonwilds läuft gerade; erst beenden."
+[ -n "$B" ] || die "Bottle \"$NAME\" not found"
+pgrep -f 'RSDragonwilds' >/dev/null && die "Dragonwilds is running; quit it first."
 
 C="$B/drive_c/users/crossover/AppData/Local/RSDragonwilds/Saved/Config/Windows"
 mkdir -p "$C"
 GUS="$C/GameUserSettings.ini"
 if [ -f "$GUS" ]; then
-  log "Frame Generation in GameUserSettings.ini abschalten"
+  log "Turning frame generation off in GameUserSettings.ini"
   n="$(grep -c -E '^FrameGenerationMode\[[0-9]+\]=[1-9]' "$GUS" || true)"
   sed -i '' -E 's/^(FrameGenerationMode\[[0-9]+\])=[0-9]+/\1=0/' "$GUS"
-  [ "${n:-0}" -gt 0 ] && echo "$n Modus-Einträge auf 0 gesetzt" || echo "war bereits aus"
+  [ "${n:-0}" -gt 0 ] && echo "$n mode entries set to 0" || echo "already off"
 else
-  log "Spieleinstellungen vorbelegen (Frame Generation aus, Grafik Hoch, 60 fps)"
+  log "Seeding game settings (frame generation off, graphics High, 60 fps)"
   {
     printf '[/Script/Dominion.DominionUserSettings]\n'
     for i in 0 1 2 3 4 5 6 7 8; do printf 'FrameGenerationMode[%d]=0\n' "$i"; done
@@ -34,12 +34,12 @@ else
     printf '\n[ScalabilityGroups]\n'
     for k in sg.ViewDistanceQuality sg.AntiAliasingQuality sg.ShadowQuality sg.GlobalIlluminationQuality sg.ReflectionQuality sg.PostProcessQuality sg.TextureQuality sg.EffectsQuality sg.FoliageQuality sg.ShadingQuality sg.LandscapeQuality; do printf '%s=3\n' "$k"; done
   } > "$GUS"
-  echo "GameUserSettings.ini angelegt"
+  echo "GameUserSettings.ini created"
 fi
-log "Engine-Variable r.FidelityFX.FI.Enabled=0"
+log "Engine variable r.FidelityFX.FI.Enabled=0"
 if [ -f "$C/Engine.ini" ] && grep -q 'r.FidelityFX.FI.Enabled' "$C/Engine.ini"; then
-  echo "bereits gesetzt"
+  echo "already set"
 else
-  printf '\n[SystemSettings]\nr.FidelityFX.FI.Enabled=0\n' >> "$C/Engine.ini"; echo "ergänzt"
+  printf '\n[SystemSettings]\nr.FidelityFX.FI.Enabled=0\n' >> "$C/Engine.ini"; echo "added"
 fi
-printf '\n\033[32mDragonwilds: Frame Generation aus, FSR-Upscaling bleibt an.\033[0m\n'
+printf '\n\033[32mDragonwilds: frame generation off, FSR upscaling stays on.\033[0m\n'

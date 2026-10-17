@@ -9,3 +9,4 @@ installer/
 dist/
 .restore-after-test.sh
 .test-backup-ts
+setup/icon/AppIcon.iconset/
